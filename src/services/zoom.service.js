@@ -6,8 +6,6 @@ const {
   ZOOM_HOST_EMAIL,
 } = require("../config/env.config");
 
-// STEP 1: Get a short-lived access token from Zoom using
-// Server-to-Server OAuth (no manual Zoom login needed, fully automated).
 const getZoomAccessToken = async () => {
   try {
     const response = await axios.post(
@@ -28,7 +26,6 @@ const getZoomAccessToken = async () => {
   }
 };
 
-// STEP 2: Create a new Zoom meeting for a given influencer.
 const createZoomMeeting = async (topic) => {
   const accessToken = await getZoomAccessToken();
 
@@ -65,7 +62,6 @@ const createZoomMeeting = async (topic) => {
   }
 };
 
-// STEP 3: End a Zoom meeting when influencer stops going live.
 const endZoomMeeting = async (meetingId) => {
   const accessToken = await getZoomAccessToken();
 
@@ -80,12 +76,37 @@ const endZoomMeeting = async (meetingId) => {
         },
       }
     );
+    console.log(`[Zoom] Meeting ${meetingId} ended successfully`);
   } catch (error) {
-    console.error("[Zoom End Meeting Error]", error.response?.data || error.message);
+    console.error(
+      `[Zoom End Meeting Error] meetingId=${meetingId}`,
+      error.response?.data || error.message
+    );
     if (error.response?.status !== 404 && error.response?.status !== 400) {
       throw error;
     }
   }
 };
 
-module.exports = { getZoomAccessToken, createZoomMeeting, endZoomMeeting };
+// One-time cleanup helper: lists every currently LIVE meeting under the
+// host account and force-ends them. Useful for clearing meetings stuck
+// active from earlier bugs/testing that block new "Go Live" attempts.
+const endAllLiveMeetings = async () => {
+  const accessToken = await getZoomAccessToken();
+
+  const response = await axios.get(
+    `https://api.zoom.us/v2/users/${ZOOM_HOST_EMAIL}/meetings?type=live&page_size=100`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+
+  const liveMeetings = response.data.meetings || [];
+  console.log(`[Zoom Cleanup] Found ${liveMeetings.length} live meeting(s)`);
+
+  for (const meeting of liveMeetings) {
+    await endZoomMeeting(meeting.id);
+  }
+
+  return liveMeetings.length;
+};
+
+module.exports = { getZoomAccessToken, createZoomMeeting, endZoomMeeting, endAllLiveMeetings };
