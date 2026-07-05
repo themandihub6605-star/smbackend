@@ -1,6 +1,7 @@
 const Influencer = require("../models/influencer.model");
 const LiveSession = require("../models/liveSession.model");
 const { createZoomMeeting, endZoomMeeting } = require("../services/zoom.service");
+const generateZoomSignature = require("../utils/zoomSignature");
 const sendResponse = require("../utils/apiResponse");
 const ApiError = require("../utils/apiError");
 const asyncHandler = require("../utils/asyncHandler");
@@ -45,9 +46,15 @@ const goLive = asyncHandler(async (req, res) => {
   influencer.isLive = true;
   await influencer.save();
 
+  const signature = generateZoomSignature(zoomMeeting.meetingId, 1);
+
   return sendResponse(res, 201, "You are now live", {
     sessionId: session._id,
-    startUrl: zoomMeeting.startUrl,
+    meetingNumber: zoomMeeting.meetingId,
+    password: zoomMeeting.password,
+    sdkKey: process.env.ZOOM_SDK_KEY,
+    signature,
+    role: 1,
   });
 });
 
@@ -90,8 +97,14 @@ const joinLive = asyncHandler(async (req, res) => {
     throw new ApiError(404, "This influencer is not live right now");
   }
 
+  const signature = generateZoomSignature(session.zoomMeetingId, 0);
+
   return sendResponse(res, 200, "Join details fetched successfully", {
-    joinUrl: session.zoomJoinUrl,
+    meetingNumber: session.zoomMeetingId,
+    password: session.zoomMeetingPassword,
+    sdkKey: process.env.ZOOM_SDK_KEY,
+    signature,
+    role: 0,
   });
 });
 
