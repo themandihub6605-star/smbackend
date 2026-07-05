@@ -13,10 +13,13 @@ router.post("/go-live", protect, authorizeRoles("influencer"), goLive);
 router.patch("/end-live", protect, authorizeRoles("influencer"), endLive);
 router.get("/join/:influencerId", joinLive);
 
-// TEMPORARY cleanup route: force-ends every live meeting stuck on the Zoom
-// account, and resets our own DB state to match. Remove once stable.
+// Super Admin only - force-ends every live meeting stuck on the Zoom
+// account and resets our own DB state to match. Used by the "Clear All
+// Live Meetings" button in the Super Admin Panel.
 router.post(
   "/cleanup-stuck-meetings",
+  protect,
+  authorizeRoles("superadmin"),
   asyncHandler(async (req, res) => {
     const endedCount = await endAllLiveMeetings();
 
