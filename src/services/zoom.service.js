@@ -54,7 +54,8 @@ const createZoomMeeting = async (topic) => {
     return {
       meetingId: response.data.id,
       password: response.data.password,
-      joinUrl: response.data.join_url,
+      joinUrl: response.data.join_url, // real Zoom link viewers use to join
+      startUrl: response.data.start_url, // real Zoom link the host uses to start as host
     };
   } catch (error) {
     console.error("[Zoom Create Meeting Error]", error.response?.data || error.message);

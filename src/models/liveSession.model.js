@@ -23,7 +23,10 @@ const liveSessionSchema = new mongoose.Schema(
       required: true,
     },
     zoomJoinUrl: {
-      type: String, // kept only for backend/reference, NOT shown to users directly
+      type: String, // real Zoom link given to viewers
+    },
+    zoomStartUrl: {
+      type: String, // real Zoom link given to the influencer (host) to start the meeting
     },
     status: {
       type: String,
